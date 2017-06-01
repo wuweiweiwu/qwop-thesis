@@ -1,142 +1,38 @@
-from image_recognizer import Recognizer
-import cv2
-import imutils
-from imutils import contours
-from PIL import ImageGrab
-import numpy as np
-import time
-import matplotlib.pyplot as plt
+from genetic_algo import Genetic
+from game_detector import GameDetector
 
-'''coordinates of the box'''
-'''mac dpi multiply location by 2'''
-score_box = (200 * 2, 333 * 2, 530 * 2, 356 * 2)
-box = (70*2, 308*2, 709*2, 709*2)
-
-recognizer = Recognizer()
-
-
-def is_end():
-    # finding the end
-    end_pil = ImageGrab.grab(box)
-    end_np = np.array(end_pil)
-    end_img = cv2.cvtColor(end_np, cv2.COLOR_BGR2RGB)
-    end_1 = cv2.cvtColor(end_img, cv2.COLOR_BGR2GRAY)
-    end_2 = cv2.threshold(end_1, 0, 255,
-                          cv2.THRESH_BINARY | cv2.THRESH_OTSU)[1]
-
-    end_3 = end_img.copy()
-
-    cnts = cv2.findContours(end_2.copy(), cv2.RETR_EXTERNAL,
-                            cv2.CHAIN_APPROX_SIMPLE)
-    cnts = cnts[0] if imutils.is_cv2() else cnts[1]
-
-    max_area = -1111111
-    max_loc = (0, 0, 0, 0)
-
-    for c in cnts:
-        (x, y, w, h) = cv2.boundingRect(c)
-        if w*h > max_area:
-            max_area = w*h
-            max_loc = (x, y, w, h)
-
-    (x, y, w, h) = max_loc
-    cv2.rectangle(end_3, (x, y), (x+w, y+h), (0, 255, 0), 1)
-
-    # test the ratio of w to h
-    if w*h > 300000 and abs(w/float(h) - 2) < .1:
-        return True
-    else:
-        return False
-
-def get_score():
-    # opencv segmentation
-    img_pil = ImageGrab.grab(score_box)
-
-    img_np = np.array(img_pil)
-    img = cv2.cvtColor(img_np, cv2.COLOR_BGR2RGB)
-
-    output = img.copy()
-
-    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-    thresh = cv2.threshold(gray, 0, 255,
-                           cv2.THRESH_BINARY | cv2.THRESH_OTSU)[1]
-
-    # find contours in the thresholded image, then initialize the
-    # digit contours lists
-    cnts = cv2.findContours(thresh.copy(), cv2.RETR_EXTERNAL,
-                            cv2.CHAIN_APPROX_SIMPLE)
-    cnts = cnts[0] if imutils.is_cv2() else cnts[1]
-
-    digits=[]
-
-    # loop over the digit area candidates
-    cnts = contours.sort_contours(cnts, method="left-to-right")[0]
-
-    is_neg = False
-
-    dec_loc = (0, 0, 0, 0)
-
-    for c in cnts:
-        # compute the bounding box of the contour
-        (x, y, w, h) = cv2.boundingRect(c)
-
-        # digits size
-        if w >= 15 and h >= 40 and h <= 45:
-            cv2.rectangle(output, (x, y), (x+w, y+h), (0, 255, 0), 1)
-            digits.append((x, y, w, h))
-        elif w < 15 and h < 10:
-            cv2.rectangle(output, (x, y), (x+w, y+h), (0, 0, 255), 1)
-            dec_loc = (x, y, w, h)
-        # negative distances
-        elif w < 20 and h < 10 and cnts[0] is c:
-            is_neg = True
-
-    # svm to predict stuff
-    numerator = 0
-    denominator = 1
-
-    for i in digits:
-        (x, y, w, h) = i
-        digit = img_pil.crop((x-2, y-2, x+w+2, y+h+2))
-        # construct the number
-        (x1, y1, w1, h1) = dec_loc
-        if x > x1:
-            denominator = denominator * 10
-        numerator = numerator * 10 + recognizer.predict(digit)
-        if recognizer.predict(digit) is 8:
-            digit.save('8.png', 'PNG')
-
-    if is_neg:
-        numerator = -numerator
-
-    return numerator / float(denominator)
 
 if __name__ == '__main__':
-    recognizer.train()
 
-    scores = []
-    colors = []
-    counter = 1
-    times = []
 
-    while not is_end():
-        scr = get_score()
-        print scr
+    game = GameDetector()
+    genetic = Genetic(20, .01, .7, 10)
+    genetic.run(5)
 
-        test_mag = abs(scr) if abs(scr) < 5 else 5
 
-        if len(scores) > 0 and abs(scores[-1] - scr) > test_mag:
-            print 'prediction wrong'
-            scr = scores[-1]
-            colors.append('r')
-        else:
-            colors.append('g')
-
-        scores.append(scr)
-        time.sleep(.1)
-
-        times.append(counter)
-        counter = counter + 1
-
-    plt.scatter(times, scores, c=colors)
-    plt.show()
+    # scores = []
+    # colors = []
+    # counter = 1
+    # times = []
+    #
+    # while not is_end():
+    #     scr = get_score()
+    #     print scr
+    #
+    #     test_mag = abs(scr) if abs(scr) < 5 else 5
+    #
+    #     if len(scores) > 0 and abs(scores[-1] - scr) > test_mag:
+    #         print 'prediction wrong'
+    #         scr = scores[-1]
+    #         colors.append('r')
+    #     else:
+    #         colors.append('g')
+    #
+    #     scores.append(scr)
+    #     time.sleep(.1)
+    #
+    #     times.append(counter)
+    #     counter = counter + 1
+    #
+    # plt.scatter(times, scores, c=colors)
+    # plt.show()
