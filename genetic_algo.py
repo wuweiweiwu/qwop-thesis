@@ -30,12 +30,6 @@ class Chromosome:
         self.genome = bs
         self.fitness = 0
 
-    def increment(self, i):
-        self.fitness += i
-
-    def decrement(self, i):
-        self.fitness -= i
-
 
 class Genetic:
     def __init__(self, p_size, crossover_rate, mutation_rate, chrom_size):
@@ -56,11 +50,12 @@ class Genetic:
 
         start_time = time.time()
         score = 0
+        end_loop = False
+        timeout = 60
 
         while not self.game.is_end():
-            for i in range(len(ch.genome)/2):
-                press = ch.genome[i*2:i*2+1]
-                duration = float(ch.genome[i*2+1:i*2+2])
+            for i in range(0, len(ch.genome)-1):
+                press = ch.genome[i:i+1]
                 (q, w, o, p) = key_comb.get(press)
                 k = []
                 if q:
@@ -73,31 +68,30 @@ class Genetic:
                     k.append('p')
                 for key in k:
                     control.keyDown(key)
-                if not duration == 0:
-                    time.sleep(duration/10 * 2)
+                time.sleep(.1)
                 for key in k:
                     control.keyUp(key)
 
                 score = self.game.get_score()
-
-                if time.time() - start_time > 200:
+                if (time.time() - start_time > 60 and score < 5) or self.game.is_end():
+                    end_loop = True
                     break
 
-                if self.game.is_end():
-                    break
+            if end_loop:
+                break
 
         self.game.new_game()
         end_time = time.time()
 
-        ch.increment(score * 1000)
+        ch.fitness += (score * 1000)
 
         time_diff = end_time - start_time
-        ch.decrement(int(time_diff))
+        ch.fitness -= (int(time_diff))
 
         # taking too long
-        if time.time() - start_time > 200 and score < 5:
+        if time.time() - start_time > timeout and score < 5:
             control.press('browserrefresh')
-            ch.decrement(1000000)
+            ch.fitness = -1000
 
         print ch.genome + ':' + str(score) + ':' + str(ch.fitness)
         self.evals.append(ch.fitness)
@@ -110,10 +104,9 @@ class Genetic:
 
     def gen_chrom(self):
         bs = ''
-        for j in range(self.chrom_size/2):
+        for j in range(self.chrom_size):
             key = random.choice('abcdefghijklmnop')
-            duration = random.randint(0, 9)
-            bs = bs + key + str(duration)
+            bs = bs + key
         return Chromosome(bs)
 
     def init_population(self):
@@ -125,34 +118,45 @@ class Genetic:
 
     def mutate(self, ch):
         if random.randint(0, 100) <= random.randint(0, int(self.m_rate * 100)):
-            m_index = random.randint(0, len(ch.genome)/2 - 2)
-            c1 = ch.genome[0:m_index*2]
-            c2 = ch.genome[m_index*2+2:]
+            m_index = random.randint(1, len(ch.genome))
+            c1 = ch.genome[0:m_index-1]
+            c2 = ch.genome[m_index:]
             random_key = random.choice('abcdefghijklmnop')
-            random_duration = random.randint(0, 9)
-            # self.population.remove(ch)
-            # self.population.append(Chromosome(c1+random_key+str(random_duration)+c2))
-            # print 'pre: '+ch.genome
-            # print 'pos: '+c1+random_key+str(random_duration)+c2
-            return Chromosome(c1+random_key+str(random_duration)+c2)
+            print 'MUTATE'
+            return Chromosome(c1+random_key+c2)
         else:
             ch.fitness = 0
             return ch
 
-    def crossover(self, ch1, ch2):
+    def single_point_crossover(self, ch1, ch2):
         if random.randint(0, 100) <= random.randint(0, int(self.c_rate * 100)):
-            c_index = random.randint(0, len(ch1.genome)/2)
-            c11 = ch1.genome[0:c_index*2]
-            c12 = ch1.genome[c_index*2:]
-            c21 = ch2.genome[0:c_index*2]
-            c22 = ch2.genome[c_index*2:]
-            # self.population.remove(ch1)
-            # self.population.remove(ch2)
-            # self.population.append(Chromosome(c11+c22))
-            # self.population.append(Chromosome(c21+c12))
-
+            c_index = random.randint(0, len(ch1.genome))
+            c11 = ch1.genome[0:c_index]
+            c12 = ch1.genome[c_index:]
+            c21 = ch2.genome[0:c_index]
+            c22 = ch2.genome[c_index:]
+            print 'CROSS'
             return Chromosome(c11+c22), Chromosome(c21+c12)
-            # print 'CROSS'
+        else:
+            ch1.fitness = 0
+            ch2.fitness = 0
+            return ch1, ch2
+
+    def two_point_crossover(self, ch1, ch2):
+        if random.randint(0, 100) <= random.randint(0, int(self.c_rate * 100)):
+            i_1 = random.randint(0, len(ch1.genome))
+            i_2 = random.randint(0, len(ch1.genome))
+            if i_2 < i_1:
+                i_1, i_2 = i_2, i_1
+            c11 = ch1.genome[0:i_1]
+            c12 = ch1.genome[i_1:i_2]
+            c13 = ch1.genome[i_2:]
+            c21 = ch2.genome[0:i_1]
+            c22 = ch2.genome[i_1:i_2]
+            c23 = ch2.genome[i_2:]
+
+            print 'CROSS: ' + str(i_1) + '-'+ str(i_2)
+            return Chromosome(c11+c22+c13), Chromosome(c21+c12+c23)
         else:
             ch1.fitness = 0
             ch2.fitness = 0
@@ -169,7 +173,6 @@ class Genetic:
         for c in self.population:
             fitness_so_far += c.fitness
             if fitness_so_far >= s:
-                self.population.remove(c)
                 return c
         return None
 
@@ -178,7 +181,7 @@ class Genetic:
         while len(new_pop) < self.p_size:
             offspring1 = self.roulette()
             offspring2 = self.roulette()
-            offspring1, offspring2 = self.crossover(offspring1, offspring2)
+            offspring1, offspring2 = self.two_point_crossover(offspring1, offspring2)
             offspring1 = self.mutate(offspring1)
             offspring2 = self.mutate(offspring2)
             new_pop.append(offspring1)
@@ -199,3 +202,13 @@ class Genetic:
     def print_pop(self):
         for p in self.population:
             print p.genome
+
+if __name__ == '__main__':
+    genetic = Genetic(p_size=1, crossover_rate=.7, mutation_rate=.01, chrom_size=10)
+    genetic.init_population()
+    p1 = genetic.population[0]
+
+    while True:
+        p1 = genetic.mutate(p1)
+        genetic.population = [p1]
+        genetic.print_pop()
