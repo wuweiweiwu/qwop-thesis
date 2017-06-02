@@ -68,14 +68,15 @@ class Genetic:
                     k.append('p')
                 for key in k:
                     control.keyDown(key)
-                time.sleep(.1)
+                time.sleep(.15)
                 for key in k:
                     control.keyUp(key)
 
-                score = self.game.get_score()
                 if (time.time() - start_time > 60 and score < 5) or self.game.is_end():
                     end_loop = True
                     break
+
+                score = self.game.get_score()
 
             if end_loop:
                 break
