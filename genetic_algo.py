@@ -1,8 +1,8 @@
 import pyautogui as control
 import random
 import time
-import multiprocessing
 from game_detector import GameDetector
+import matplotlib.pyplot as plt
 
 key_comb = {
     'a': (1, 1, 1, 1),
@@ -46,17 +46,21 @@ class Genetic:
         self.chrom_size = chrom_size
         self.game = GameDetector()
         self.generation = 0
+        self.evals = []
+        self.counters = []
+        self.counter = 0
 
     def evaluate(self, ch):
         control.click(70*2+40, 308*2+40)
         control.press('space')
 
         start_time = time.time()
+        score = 0
 
         while not self.game.is_end():
             for i in range(len(ch.genome)/2):
                 press = ch.genome[i*2:i*2+1]
-                dura = float(ch.genome[i*2+1:i*2+2])
+                duration = float(ch.genome[i*2+1:i*2+2])
                 (q, w, o, p) = key_comb.get(press)
                 k = []
                 if q:
@@ -69,22 +73,36 @@ class Genetic:
                     k.append('p')
                 for key in k:
                     control.keyDown(key)
-
-                time.sleep(3/dura)
+                if not duration == 0:
+                    time.sleep(duration/10 * 2)
                 for key in k:
                     control.keyUp(key)
+
+                score = self.game.get_score()
+
+                if time.time() - start_time > 200:
+                    break
+
                 if self.game.is_end():
                     break
 
+        self.game.new_game()
         end_time = time.time()
 
-        score = self.game.get_score()
         ch.increment(score * 1000)
 
         time_diff = end_time - start_time
         ch.decrement(int(time_diff))
 
-        print ch.genome + ':' + str(ch.fitness)
+        # taking too long
+        if time.time() - start_time > 200 and score < 5:
+            control.press('browserrefresh')
+            ch.decrement(1000000)
+
+        print ch.genome + ':' + str(score) + ':' + str(ch.fitness)
+        self.evals.append(ch.fitness)
+        self.counters.append(self.counter)
+        self.counter += 1
 
     def eval_all(self):
         for c in self.population:
@@ -94,7 +112,7 @@ class Genetic:
         bs = ''
         for j in range(self.chrom_size/2):
             key = random.choice('abcdefghijklmnop')
-            duration = random.randint(1, 9)
+            duration = random.randint(0, 9)
             bs = bs + key + str(duration)
         return Chromosome(bs)
 
@@ -111,7 +129,7 @@ class Genetic:
             c1 = ch.genome[0:m_index*2]
             c2 = ch.genome[m_index*2+2:]
             random_key = random.choice('abcdefghijklmnop')
-            random_duration = random.randint(1, 9)
+            random_duration = random.randint(0, 9)
             # self.population.remove(ch)
             # self.population.append(Chromosome(c1+random_key+str(random_duration)+c2))
             # print 'pre: '+ch.genome
@@ -147,10 +165,11 @@ class Genetic:
             total_fitness += c.fitness
 
         s = random.random() * total_fitness
-        fitness_sofar = 0
+        fitness_so_far = 0
         for c in self.population:
-            fitness_sofar += c.fitness
-            if fitness_sofar >= s:
+            fitness_so_far += c.fitness
+            if fitness_so_far >= s:
+                self.population.remove(c)
                 return c
         return None
 
@@ -173,6 +192,9 @@ class Genetic:
             self.eval_all()
             self.repopulate()
             self.generation += 1
+
+        plt.scatter(self.counters, self.evals)
+        plt.show()
 
     def print_pop(self):
         for p in self.population:

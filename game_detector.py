@@ -14,6 +14,8 @@ class GameDetector:
         '''mac dpi multiply location by 2'''
         self.score_box = (200 * 2, 333 * 2, 530 * 2, 356 * 2)
         self.box = (70 * 2, 308 * 2, 709 * 2, 709 * 2)
+        self.predicted = []
+        self.colors = []
 
     def is_end(self):
         # finding the end
@@ -107,4 +109,16 @@ class GameDetector:
         if is_neg:
             numerator = -numerator
 
-        return numerator / float(denominator)
+        #error correction
+        scr = numerator / float(denominator)
+
+        test_mag = abs(scr) if abs(scr) < 5 else 5
+
+        if len(self.predicted) > 0 and abs(self.predicted[-1] - scr) > test_mag:
+            scr = self.predicted[-1]
+
+        self.predicted.append(scr)
+        return scr
+
+    def new_game(self):
+        self.predicted = []
