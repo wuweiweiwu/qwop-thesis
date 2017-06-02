@@ -9,7 +9,15 @@
 `game_detector.py` contains the code that is used to get the score and game state (end). currently working on dynamic prediction of where the game box is
 
 
-## you have to specify the game box and score box in game_detector.py
+### you have to specify the game box and score box in game_detector.py
 
+### am also working on other ways to encode the genomes
+
+currently it is encoded as a sequence of letters from a-p where 'a' is holding all 4 buttons down to where 'p' is not holding any buttons down. there is a total of 16 combinations.
+
+
+
+
+### example running
 
 ![alt text](screen.png "example run") 
