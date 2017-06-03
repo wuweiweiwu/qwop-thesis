@@ -34,24 +34,24 @@ class GameDetector:
                                 cv2.CHAIN_APPROX_SIMPLE)
         cnts = cnts[0] if imutils.is_cv2() else cnts[1]
 
-        print 'recorded ratio: ' + str((self.measured_box[2]-self.measured_box[0])/
-                                      float(self.measured_box[3]-self.measured_box[1]))
-        print 'recorded size: ' + str((self.measured_box[2]-self.measured_box[0])*
-                                     float(self.measured_box[3]-self.measured_box[1]))
+        # print 'recorded ratio: ' + str((self.measured_box[2]-self.measured_box[0])/
+        #                                float(self.measured_box[3]-self.measured_box[1]))
+        # print 'recorded size: ' + str((self.measured_box[2]-self.measured_box[0])*
+        #                               float(self.measured_box[3]-self.measured_box[1]))
         for c in cnts:
             (x, y, w, h) = cv2.boundingRect(c)
-            if w*h > 900000 and w*h < 1000000 \
-                and abs((self.measured_box[2]-self.measured_box[0])/
-                        float(self.measured_box[3]-self.measured_box[1]) - w/float(h)) < .1:
+            if w*h > 900000 / (2/self.screen_ratio) ^ 2 and w*h < 1000000 / (2/self.screen_ratio) ^ 2\
+                    and abs((self.measured_box[2]-self.measured_box[0]) /
+                            float(self.measured_box[3]-self.measured_box[1]) - w/float(h)) < .1:
                 cv2.rectangle(s_3, (x, y), (x + w, y + h), (0, 255, 0), 1)
-                print 'ratio: '+str(w/float(h)) + ' size: ' + str(w*h)
-                print 'x: '+str(x)
-                print 'y: '+str(y)
-                print 'w: '+str(w)
-                print 'h: '+str(h)
+                # print 'ratio: '+str(w/float(h)) + ' size: ' + str(w*h)
+                # print 'x: '+str(x)
+                # print 'y: '+str(y)
+                # print 'w: '+str(w)
+                # print 'h: '+str(h)
                 side_border = int(w/5.0)
                 top_border = int(h/20.0)
-                cv2.rectangle(s_3,(x+side_border,y+top_border),(x+w-side_border, y+3*top_border), (0, 255, 0), 1)
+                cv2.rectangle(s_3,(x+side_border, y+top_border), (x+w-side_border, y+3*top_border), (0, 255, 0), 1)
                 # r = 1000.0 / s_3.shape[1]
                 # dim = (1000, int(s_3.shape[0] * r))
                 #
@@ -59,9 +59,9 @@ class GameDetector:
                 #
                 # cv2.imshow('whole screen', s_4)
                 # cv2.waitKey(0)
-                return tuple(map(lambda z : z/self.screen_ratio, (x, y, x+w, y+h))), \
-                       tuple(map(lambda z : z/self.screen_ratio,(x+side_border, y+top_border,
-                                                                     x+w-side_border, y+3*top_border)))
+                return tuple(map(lambda z: z/self.screen_ratio, (x, y, x+w, y+h))), \
+                       tuple(map(lambda z: z/self.screen_ratio, (x+side_border, y+top_border,
+                                                                 x+w-side_border, y+3*top_border)))
 
         raise NameError('NO GAME FOUND')
 
@@ -85,14 +85,14 @@ class GameDetector:
 
         for c in cnts:
             (x, y, w, h) = cv2.boundingRect(c)
-            if w * h > max_area and w * h < 500000:
+            if w * h > max_area and w * h < 500000 / (2/self.screen_ratio) ^ 2:
                 max_area = w * h
                 max_loc = (x, y, w, h)
 
         (x, y, w, h) = max_loc
         cv2.rectangle(end_3, (x, y), (x + w, y + h), (0, 255, 0), 1)
         # test the ratio of w to h
-        if w * h > 300000 and abs(w / float(h) - 2) < .1:
+        if w * h > 300000 / (2/self.screen_ratio) ^ 2 and abs(w / float(h) - 2) < .1:
             return True
         else:
             return False
@@ -130,15 +130,15 @@ class GameDetector:
             (x, y, w, h) = cv2.boundingRect(c)
 
             # digits size
-            if w >= 15 and h >= 40 and h <= 45:
+            if w >= 15 / (2/self.screen_ratio) and h >= 40 / (2/self.screen_ratio) and h <= 45 / (2/self.screen_ratio):
                 cv2.rectangle(output, (x, y), (x + w, y + h), (0, 255, 0), 1)
                 digits.append((x, y, w, h))
-            elif w < 15 and h < 10:
+            elif w < 15 / (2/self.screen_ratio) and h < 10 / (2/self.screen_ratio):
                 cv2.rectangle(output, (x, y), (x + w, y + h), (0, 0, 255), 1)
                 dec_loc = (x, y, w, h)
                 # print dec_loc
             # negative distances
-            elif w < 20 and h < 10:
+            elif w < 20 / (2/self.screen_ratio) and h < 10 / (2/self.screen_ratio):
                 cv2.rectangle(output, (x, y), (x + w, y + h), (255, 0, 0), 1)
                 is_neg = True
                 # print (x, y, w, h)
