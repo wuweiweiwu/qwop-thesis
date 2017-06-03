@@ -72,17 +72,18 @@ class Genetic:
                 for key in k:
                     control.keyUp(key)
 
+                score = self.game.get_score()
+
                 if (time.time() - start_time > 60 and score < 5) or self.game.is_end():
                     end_loop = True
                     break
-
-                score = self.game.get_score()
 
             if end_loop:
                 break
 
         self.game.new_game()
         end_time = time.time()
+        score = self.game.get_score()
 
         ch.fitness += (score * 1000)
 

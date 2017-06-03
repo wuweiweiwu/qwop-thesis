@@ -4,6 +4,7 @@ import imutils
 from imutils import contours
 from PIL import ImageGrab
 import numpy as np
+import sys
 
 
 class GameDetector:
@@ -12,14 +13,61 @@ class GameDetector:
         self.recognizer.train()
         '''coordinates of the box'''
         '''mac dpi multiply location by 2'''
-        self.score_box = (200 * 2, 333 * 2, 530 * 2, 356 * 2)
-        self.box = (70 * 2, 308 * 2, 709 * 2, 709 * 2)
+        self.measured_box = (70 * 2, 308 * 2, 709 * 2, 709 * 2)
+        self.score_box = ()
+        self.box = ()
+        self.screen_ratio = 2 if sys.platform == 'darwin' else 1
+        self.box, self.score_box = self.find_game_box()
         self.predicted = []
         self.colors = []
 
+    def find_game_box(self):
+        screen_pil = ImageGrab.grab()
+        screen_np = np.array(screen_pil)
+        screen_img = cv2.cvtColor(screen_np, cv2.COLOR_BGR2RGB)
+        s_1 = cv2.cvtColor(screen_img, cv2.COLOR_BGR2GRAY)
+        s_2 = cv2.threshold(s_1, 0, 255,
+                            cv2.THRESH_BINARY | cv2.THRESH_OTSU)[1]
+        s_3 = screen_img.copy()
+
+        cnts = cv2.findContours(s_2.copy(), cv2.RETR_TREE,
+                                cv2.CHAIN_APPROX_SIMPLE)
+        cnts = cnts[0] if imutils.is_cv2() else cnts[1]
+
+        print 'recorded ratio: ' + str((self.measured_box[2]-self.measured_box[0])/
+                                      float(self.measured_box[3]-self.measured_box[1]))
+        print 'recorded size: ' + str((self.measured_box[2]-self.measured_box[0])*
+                                     float(self.measured_box[3]-self.measured_box[1]))
+        for c in cnts:
+            (x, y, w, h) = cv2.boundingRect(c)
+            if w*h > 900000 and w*h < 1000000 \
+                and abs((self.measured_box[2]-self.measured_box[0])/
+                        float(self.measured_box[3]-self.measured_box[1]) - w/float(h)) < .1:
+                cv2.rectangle(s_3, (x, y), (x + w, y + h), (0, 255, 0), 1)
+                print 'ratio: '+str(w/float(h)) + ' size: ' + str(w*h)
+                print 'x: '+str(x)
+                print 'y: '+str(y)
+                print 'w: '+str(w)
+                print 'h: '+str(h)
+                side_border = int(w/5.0)
+                top_border = int(h/20.0)
+                cv2.rectangle(s_3,(x+side_border,y+top_border),(x+w-side_border, y+3*top_border), (0, 255, 0), 1)
+                # r = 1000.0 / s_3.shape[1]
+                # dim = (1000, int(s_3.shape[0] * r))
+                #
+                # s_4 = cv2.resize(s_3, dim)
+                #
+                # cv2.imshow('whole screen', s_4)
+                # cv2.waitKey(0)
+                return tuple(map(lambda z : z/self.screen_ratio, (x, y, x+w, y+h))), \
+                       tuple(map(lambda z : z/self.screen_ratio,(x+side_border, y+top_border,
+                                                                     x+w-side_border, y+3*top_border)))
+
+        raise NameError('NO GAME FOUND')
+
     def is_end(self):
         # finding the end
-        end_pil = ImageGrab.grab(self.box)
+        end_pil = ImageGrab.grab(tuple(map(lambda z: z*self.screen_ratio, self.box)))
         end_np = np.array(end_pil)
         end_img = cv2.cvtColor(end_np, cv2.COLOR_BGR2RGB)
         end_1 = cv2.cvtColor(end_img, cv2.COLOR_BGR2GRAY)
@@ -37,13 +85,12 @@ class GameDetector:
 
         for c in cnts:
             (x, y, w, h) = cv2.boundingRect(c)
-            if w * h > max_area:
+            if w * h > max_area and w * h < 500000:
                 max_area = w * h
                 max_loc = (x, y, w, h)
 
         (x, y, w, h) = max_loc
         cv2.rectangle(end_3, (x, y), (x + w, y + h), (0, 255, 0), 1)
-
         # test the ratio of w to h
         if w * h > 300000 and abs(w / float(h) - 2) < .1:
             return True
@@ -52,7 +99,7 @@ class GameDetector:
 
     def get_score(self):
         # opencv segmentation
-        img_pil = ImageGrab.grab(self.score_box)
+        img_pil = ImageGrab.grab(tuple(map(lambda z: z*self.screen_ratio, self.score_box)))
 
         img_np = np.array(img_pil)
         img = cv2.cvtColor(img_np, cv2.COLOR_BGR2RGB)
@@ -89,9 +136,15 @@ class GameDetector:
             elif w < 15 and h < 10:
                 cv2.rectangle(output, (x, y), (x + w, y + h), (0, 0, 255), 1)
                 dec_loc = (x, y, w, h)
+                # print dec_loc
             # negative distances
-            elif w < 20 and h < 10 and cnts[0] is c:
+            elif w < 20 and h < 10:
+                cv2.rectangle(output, (x, y), (x + w, y + h), (255, 0, 0), 1)
                 is_neg = True
+                # print (x, y, w, h)
+
+        # cv2.imshow('output', output)
+        # cv2.waitKey(0)
 
         # svm to predict stuff
         numerator = 0
@@ -122,3 +175,7 @@ class GameDetector:
 
     def new_game(self):
         self.predicted = []
+
+if __name__ == '__main__':
+    game = GameDetector()
+    print game.get_score()
