@@ -60,6 +60,11 @@ class Genetic:
         while not self.game.is_end():
             for i in range(0, len(ch.genome)-1):
                 press = ch.genome[i:i+1]
+                if i+2 < len(ch.genome):
+                    next_press = ch.genome[i+1:i+2]
+                    (nq, nw, no, np) = key_comb.get(next_press)
+                else:
+                    next_press = None
                 (q, w, o, p) = key_comb.get(press)
                 k = []
                 if q:
@@ -72,9 +77,40 @@ class Genetic:
                     k.append('p')
                 for key in k:
                     control.keyDown(key)
-                time.sleep(.15)
-                for key in k:
-                    control.keyUp(key)
+                    
+                # time.sleep(.15)
+
+                if next_press:
+                    key_up = []
+                    new_key_down = []
+
+                    if not nq and q:
+                        key_up.append('q')
+                    if not nw and w:
+                        key_up.append('w')
+                    if not no and o:
+                        key_up.append('o')
+                    if not np and p:
+                        key_up.append('p')
+
+                    if not q and nq:
+                        new_key_down.append('q')
+                    if not w and nw:
+                        new_key_down.append('w')
+                    if not o and no:
+                        new_key_down.append('o')
+                    if not p and np:
+                        new_key_down.append('p')
+
+                    for key in key_up:
+                        control.keyUp(key)
+
+                    for key in new_key_down:
+                        control.keyDown(key)
+
+                else:
+                    for key in k:
+                        control.keyUp(key)
 
                 score = self.game.get_score()
 
@@ -134,13 +170,16 @@ class Genetic:
             ch.fitness = 0
             return ch
 
+    # doesnt preserve chromosome length
     def single_point_crossover(self, ch1, ch2):
         if random.randint(0, 100) <= random.randint(0, int(self.c_rate * 100)):
-            c_index = random.randint(0, len(ch1.genome))
-            c11 = ch1.genome[0:c_index]
-            c12 = ch1.genome[c_index:]
-            c21 = ch2.genome[0:c_index]
-            c22 = ch2.genome[c_index:]
+            c_index_1 = random.randint(0, len(ch1.genome))
+            c_index_2 = random.randint(0, len(ch2.genome))
+
+            c11 = ch1.genome[0:c_index_1]
+            c12 = ch1.genome[c_index_1:]
+            c21 = ch2.genome[0:c_index_2]
+            c22 = ch2.genome[c_index_2:]
             print 'CROSS'
             return Chromosome(c11+c22), Chromosome(c21+c12)
         else:
@@ -188,7 +227,8 @@ class Genetic:
         while len(new_pop) < self.p_size:
             offspring1 = self.roulette()
             offspring2 = self.roulette()
-            offspring1, offspring2 = self.two_point_crossover(offspring1, offspring2)
+            # two point for one point chrossover
+            offspring1, offspring2 = self.single_point_crossover(offspring1, offspring2)
             offspring1 = self.mutate(offspring1)
             offspring2 = self.mutate(offspring2)
             new_pop.append(offspring1)
