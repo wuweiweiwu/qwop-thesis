@@ -6,10 +6,7 @@
 
 `image_recognizer.py` contains the code that is used by `game_detector.py` to read numbers
 
-`game_detector.py` contains the code that is used to get the score and game state (end). currently working on dynamic prediction of where the game box is
-
-
-### you have to specify the game box and score box in game_detector.py
+`game_detector.py` contains the code that is used to get the score and game state (end) and where the game is located on the screen. ~~currently working on dynamic prediction of where the game box is~~
 
 ### am also working on other ways to encode the genomes
 
