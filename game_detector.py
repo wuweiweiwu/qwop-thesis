@@ -18,6 +18,10 @@ class GameDetector:
         self.box = ()
         self.screen_ratio = 2 if sys.platform == 'darwin' else 1
         self.box, self.score_box = self.find_game_box()
+        print 'game box'
+        print self.box
+        print 'score box'
+        print self.score_box
         self.predicted = []
         self.colors = []
 

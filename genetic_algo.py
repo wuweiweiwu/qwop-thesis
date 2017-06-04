@@ -38,6 +38,8 @@ class Genetic:
         self.c_rate = crossover_rate
         self.m_rate = mutation_rate
         self.chrom_size = chrom_size
+        if p_size % 2:
+            raise NameError('population must be an even number!')
         self.game = GameDetector()
         self.generation = 0
         self.evals = []
@@ -45,7 +47,9 @@ class Genetic:
         self.counter = 0
 
     def evaluate(self, ch):
-        control.click(70*2+40, 308*2+40)
+        # clicking on the game to direct input
+        control.click(self.game.score_box[0], self.game.score_box[1])
+        # control.click(70*2+40, 308*2+40)
         control.press('space')
 
         start_time = time.time()
@@ -95,7 +99,7 @@ class Genetic:
             control.press('browserrefresh')
             ch.fitness = -1000
 
-        print ch.genome + ':' + str(score) + ':' + str(ch.fitness)
+        print 'genome:' + ch.genome + ' score:' + str(score) + ' fitness:' + str(ch.fitness)
         self.evals.append(ch.fitness)
         self.counters.append(self.counter)
         self.counter += 1
@@ -176,7 +180,8 @@ class Genetic:
             fitness_so_far += c.fitness
             if fitness_so_far >= s:
                 return c
-        return None
+        #should not happen
+        return self.population[0]
 
     def repopulate(self):
         new_pop = []
