@@ -77,7 +77,7 @@ class Genetic:
                     k.append('p')
                 for key in k:
                     control.keyDown(key)
-                    
+
                 # time.sleep(.15)
 
                 if next_press:
