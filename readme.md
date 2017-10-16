@@ -12,9 +12,6 @@
 
 currently it is encoded as a sequence of letters from a-p where 'a' is holding all 4 buttons down to where 'p' is not holding any buttons down. there is a total of 16 combinations.
 
-
-
-
 ### example running
 
 ![alt text](screen.png "example run") 
