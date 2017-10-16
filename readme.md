@@ -2,7 +2,7 @@
 
 `genetic_algo.py` contains the code for a cellular genetic algorithm that currently uses 2 point crossover to preserve chromosome length.
 
-`main.py` contains the code to run everything. you can sepcify how many generations to run. this is the file you want to run.
+`main.py` contains the code to run everything. You can sepcify how many generations to run. this is the file you want to run.
 
 `image_recognizer.py` contains the code that is used by `game_detector.py` to read numbers
 
