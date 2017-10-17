@@ -116,6 +116,7 @@ if __name__ == "__main__":
             distance = reward
             # if it is done then reward = -10 else its the reward
             reward = reward if not done else -10
+            print "reward: ", reward
             # reshape the new stage
             next_state = np.reshape(next_state, [1, state_size])
             # print next_state

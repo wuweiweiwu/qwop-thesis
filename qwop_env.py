@@ -12,10 +12,12 @@ class QWOPEnv:
         self.observation_space = self.game.get_state().shape[0]
         # 16 possible combinations
         self.action_space = 16
+        self.prev_score = None
 
     def reset(self):
         # returns initial state
         self.game.new_game()
+        self.prev_score = None
         return self.game.get_state()
 
     # def render(self):
@@ -30,8 +32,11 @@ class QWOPEnv:
 
         self.game.eval(letter)
         next_state = self.game.get_state()
-        reward = self.game.get_score()
+        new_score = self.game.get_score()
+        print 'new score: ', new_score
+        reward = new_score if not self.prev_score else new_score - self.prev_score
         done = self.game.is_end()
+        self.prev_score = new_score
         return next_state, reward, done
 
 if __name__ == '__main__':
