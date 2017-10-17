@@ -5,6 +5,7 @@ from collections import deque
 from keras.models import Sequential
 from keras.layers import Dense
 from keras.optimizers import Adam
+from qwop_env import QWOPEnv
 
 EPISODES = 1000
 
@@ -79,12 +80,14 @@ class DQNAgent:
 
 if __name__ == "__main__":
     # the gym environment
-    env = gym.make('CartPole-v1')
-
+    # env = gym.make('CartPole-v1')
+    env = QWOPEnv()
     # input dimensions
-    state_size = env.observation_space.shape[0]
+    # state_size = env.observation_space.shape[0]
+    state_size = env.observation_space
     # output dimensions
-    action_size = env.action_space.n
+    # action_size = env.action_space.n
+    action_size = env.action_space
     # create dqn agent
     agent = DQNAgent(state_size, action_size)
     # agent.load("./save/cartpole-dqn.h5")
@@ -99,16 +102,18 @@ if __name__ == "__main__":
         # reshape so its the same dimension as the input to our agent
         state = np.reshape(state, [1, state_size])
         # play till score = 500
+        # for qwoppy play 500 steps or until done
         for time in range(500):
             # show the environment
-            env.render()
+            # env.render()
             # ge the action that the agent predicts based on current state
             action = agent.act(state)
             # print action
             # apply the action and get the new state
-            next_state, reward, done, _ = env.step(action)
+            # next_state, reward, done, _ = env.step(action)
+            next_state, reward, done = env.step(action)
             # print next_state, reward, done
-
+            distance = reward
             # if it is done then reward = -10 else its the reward
             reward = reward if not done else -10
             # reshape the new stage
@@ -121,8 +126,8 @@ if __name__ == "__main__":
             # current state = new state
             state = next_state
             if done:
-                print("episode: {}/{}, score: {}, e: {:.2}"
-                      .format(e, EPISODES, time, agent.epsilon))
+                print("episode: {}/{}, score: {}, e: {:.2}, distance: {}"
+                      .format(e, EPISODES, time, agent.epsilon, distance))
                 break
         # agent remember the past batch_size actions and states
         if len(agent.memory) > batch_size:

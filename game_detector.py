@@ -3,9 +3,28 @@ import cv2
 import imutils
 from imutils import contours
 from PIL import ImageGrab
+import pyautogui as control
 import numpy as np
 import sys
 
+key_comb = {
+    'a': (1, 1, 1, 1),
+    'b': (1, 1, 1, 0),
+    'c': (1, 1, 0, 1),
+    'd': (1, 1, 0, 0),
+    'e': (1, 0, 1, 1),
+    'f': (1, 0, 1, 0),
+    'g': (1, 0, 0, 1),
+    'h': (1, 0, 0, 0),
+    'i': (0, 1, 1, 1),
+    'j': (0, 1, 1, 0),
+    'k': (0, 1, 0, 1),
+    'l': (0, 1, 0, 1),
+    'm': (0, 0, 1, 1),
+    'n': (0, 0, 1, 0),
+    'o': (0, 0, 0, 1),
+    'p': (0, 0, 0, 0)
+}
 
 class GameDetector:
     def __init__(self):
@@ -18,12 +37,10 @@ class GameDetector:
         self.box = ()
         self.screen_ratio = 2 if sys.platform == 'darwin' else 1
         self.box, self.score_box = self.find_game_box()
-        print 'game box'
-        print self.box
-        print 'score box'
-        print self.score_box
         self.predicted = []
-        self.colors = []
+        self.prev_move = None
+        print 'game box', self.box
+        print 'score box', self.score_box
 
     def find_game_box(self):
         screen_pil = ImageGrab.grab()
@@ -48,27 +65,16 @@ class GameDetector:
                     and abs((self.measured_box[2]-self.measured_box[0]) /
                             float(self.measured_box[3]-self.measured_box[1]) - w/float(h)) < .1:
                 cv2.rectangle(s_3, (x, y), (x + w, y + h), (0, 255, 0), 1)
-                # print 'ratio: '+str(w/float(h)) + ' size: ' + str(w*h)
-                # print 'x: '+str(x)
-                # print 'y: '+str(y)
-                # print 'w: '+str(w)
-                # print 'h: '+str(h)
+
                 side_border = int(w/5.0)
                 top_border = int(h/20.0)
                 cv2.rectangle(s_3,(x+side_border, y+top_border), (x+w-side_border, y+3*top_border), (0, 255, 0), 1)
-                # r = 1000.0 / s_3.shape[1]
-                # dim = (1000, int(s_3.shape[0] * r))
-                #
-                # s_4 = cv2.resize(s_3, dim)
-                #
-                # cv2.imshow('whole screen', s_4)
-                # cv2.waitKey(0)
                 return tuple(map(lambda z: z/self.screen_ratio, (x, y, x+w, y+h))), \
                        tuple(map(lambda z: z/self.screen_ratio, (x+side_border, y+top_border,
                                                                  x+w-side_border, y+3*top_border)))
-
         raise NameError('NO GAME FOUND')
 
+    # test if game is ended
     def is_end(self):
         # finding the end
         end_pil = ImageGrab.grab(tuple(map(lambda z: z*self.screen_ratio, self.box)))
@@ -101,6 +107,7 @@ class GameDetector:
         else:
             return False
 
+    # get score of current game using openCV
     def get_score(self):
         # opencv segmentation
         img_pil = ImageGrab.grab(tuple(map(lambda z: z*self.screen_ratio, self.score_box)))
@@ -140,15 +147,11 @@ class GameDetector:
             elif w < 15 / (2/self.screen_ratio) and h < 10 / (2/self.screen_ratio):
                 cv2.rectangle(output, (x, y), (x + w, y + h), (0, 0, 255), 1)
                 dec_loc = (x, y, w, h)
-                # print dec_loc
+
             # negative distances
             elif w < 20 / (2/self.screen_ratio) and h < 10 / (2/self.screen_ratio):
                 cv2.rectangle(output, (x, y), (x + w, y + h), (255, 0, 0), 1)
                 is_neg = True
-                # print (x, y, w, h)
-
-        # cv2.imshow('output', output)
-        # cv2.waitKey(0)
 
         # svm to predict stuff
         numerator = 0
@@ -177,9 +180,66 @@ class GameDetector:
         self.predicted.append(scr)
         return scr
 
+    # reset the game and clear the predicted score
     def new_game(self):
         self.predicted = []
+        control.click(self.score_box[0], self.score_box[1])
+        control.press('space')
+
+    # get the state
+    def get_state(self):
+        # the box tuple that contains the person
+        # person_box = (204, 356, 414, 662)
+        person_box = (248, 562, 341, 563)
+        game_img = ImageGrab.grab(tuple(map(lambda z: z*self.screen_ratio, person_box)))
+        game_state = np.array(game_img.getdata()).flatten()
+        return game_state
+
+    # step by step evaluation of new move
+    def eval(self, move):
+        (nq, nw, no, np) = key_comb[move]
+        if not self.prev_move:
+            key_down = []
+            if nq:
+                key_down.append('q')
+            if nw:
+                key_down.append('w')
+            if no:
+                key_down.append('o')
+            if np:
+                key_down.append('p')
+            for key in key_down:
+                control.keyDown(key)
+        else:
+            (q, w, o, p) = key_comb[self.prev_move]
+            key_up = []
+            new_key_down = []
+            if not nq and q:
+                key_up.append('q')
+            if not nw and w:
+                key_up.append('w')
+            if not no and o:
+                key_up.append('o')
+            if not np and p:
+                key_up.append('p')
+
+            if not q and nq:
+                new_key_down.append('q')
+            if not w and nw:
+                new_key_down.append('w')
+            if not o and no:
+                new_key_down.append('o')
+            if not p and np:
+                new_key_down.append('p')
+
+            for key in key_up:
+                control.keyUp(key)
+
+            for key in new_key_down:
+                control.keyDown(key)
+        self.prev_move = move
 
 if __name__ == '__main__':
     game = GameDetector()
-    print game.get_score()
+    # game.get_state()
+    # print game.get_score()
