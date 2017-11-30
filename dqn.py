@@ -94,6 +94,11 @@ if __name__ == "__main__":
     done = False
     batch_size = 32
 
+    #file to write distance
+    score_file = open('scores.txt', 'w+')
+    moves_file = open('moves.txt', 'w+')
+    distance_file = open('distances.txt', 'w+')
+
     # run 1000 episodes
     for e in range(EPISODES):
         # reset the environment
@@ -111,7 +116,8 @@ if __name__ == "__main__":
             # print action
             # apply the action and get the new state
             # next_state, reward, done, _ = env.step(action)
-            next_state, reward, done = env.step(action)
+            next_state, reward, done, move = env.step(action)
+            moves_file.write(move)
             # print next_state, reward, done
             distance = reward
             # if it is done then reward = -10 else its the reward
@@ -129,9 +135,15 @@ if __name__ == "__main__":
             if done:
                 print("episode: {}/{}, score: {}, e: {:.2}, distance: {}"
                       .format(e, EPISODES, time, agent.epsilon, distance))
+                score_file.write('{}\n'.format(time))
+                moves_file.write('\n')
+                distance_file.write('{}\n'.format(distance))
                 break
         # agent remember the past batch_size actions and states
         if len(agent.memory) > batch_size:
             agent.replay(batch_size)
-        # if e % 10 == 0:
-        #     agent.save("./save/cartpole-dqn.h5")
+        if e % 10 == 0:
+            agent.save("./save/qwop-dqn.h5")
+    score_file.close()
+    moves_file.close()
+    distance_file.close()

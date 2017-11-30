@@ -37,7 +37,7 @@ class QWOPEnv:
         reward = new_score if not self.prev_score else new_score - self.prev_score
         done = self.game.is_end()
         self.prev_score = new_score
-        return next_state, reward, done
+        return next_state, reward, done, letter
 
 if __name__ == '__main__':
     env = QWOPEnv()
