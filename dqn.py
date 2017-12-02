@@ -95,9 +95,12 @@ if __name__ == "__main__":
     batch_size = 32
 
     #file to write distance
-    score_file = open('scores.txt', 'w+')
-    moves_file = open('moves.txt', 'w+')
-    distance_file = open('distances.txt', 'w+')
+    # score_file = open('scores.txt', 'w+')
+    # moves_file = open('moves.txt', 'w+')
+    # distance_file = open('distances.txt', 'w+')
+    score_file = open('scores0.txt', 'w+')
+    moves_file = open('moves0.txt', 'w+')
+    distance_file = open('distances0.txt', 'w+')
 
     # run 1000 episodes
     for e in range(EPISODES):
@@ -121,7 +124,7 @@ if __name__ == "__main__":
             # print next_state, reward, done
             distance = reward
             # if it is done then reward = -10 else its the reward
-            reward = reward if not done else -10
+            # reward = reward if not done else -10
             print "reward: ", reward
             # reshape the new stage
             next_state = np.reshape(next_state, [1, state_size])
