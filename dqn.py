@@ -40,6 +40,7 @@ class DQNAgent:
         return model
 
     def remember(self, state, action, reward, next_state, done):
+        print "reward: {}".format(reward)
         self.memory.append((state, action, reward, next_state, done))
 
     def act(self, state):
@@ -56,11 +57,11 @@ class DQNAgent:
         # randomly sample batch_size from self.memory
         minibatch = random.sample(self.memory, batch_size)
         for state, action, reward, next_state, done in minibatch:
-            target = reward
-            if not done:
+            # target = reward
+            # if not done:
                 # predict the future discount reward
-                target = (reward + self.gamma *
-                          np.amax(self.model.predict(next_state)[0]))
+            target = (reward + self.gamma *
+                      np.amax(self.model.predict(next_state)[0]))
 
             # map the current state to the future discounted reward
             target_f = self.model.predict(state)
@@ -90,7 +91,7 @@ if __name__ == "__main__":
     action_size = env.action_space
     # create dqn agent
     agent = DQNAgent(state_size, action_size)
-    # agent.load("./save/cartpole-dqn.h5")
+    agent.load("./save/qwop-dqn.h5")
     done = False
     batch_size = 32
 
@@ -125,16 +126,18 @@ if __name__ == "__main__":
             distance = reward
             # if it is done then reward = -10 else its the reward
             # reward = reward if not done else -10
-            print "reward: ", reward
+            # print "reward: ", reward
             # reshape the new stage
             next_state = np.reshape(next_state, [1, state_size])
             # print next_state
 
             # make the agent remember this action and state and new state
-            agent.remember(state, action, reward, next_state, done)
+            # agent.remember(state, action, reward, next_state, done)
+            agent.remember(state, action, time, next_state, done)
 
             # current state = new state
             state = next_state
+            # if its dead
             if done:
                 print("episode: {}/{}, score: {}, e: {:.2}, distance: {}"
                       .format(e, EPISODES, time, agent.epsilon, distance))

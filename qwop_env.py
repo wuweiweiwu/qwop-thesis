@@ -39,8 +39,8 @@ class QWOPEnv:
         self.prev_score = new_score
         return next_state, reward, done, letter
 
-if __name__ == '__main__':
-    env = QWOPEnv()
-    env.reset()
-    for i in range(16):
-        print env.step(i)
+# if __name__ == '__main__':
+#     env = QWOPEnv()
+#     env.reset()
+#     for i in range(16):
+#         print env.step(i)
