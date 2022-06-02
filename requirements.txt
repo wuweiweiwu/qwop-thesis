@@ -6,7 +6,7 @@ cycler==0.10.0
 funcsigs==1.0.2
 functools32==3.2.3.post2
 -e git+https://github.com/openai/gym.git@b5576dc23a5fcad0733042ab2ad440200ebb6209#egg=gym
-html5lib==0.9999999
+html5lib==0.99999999
 idna==2.6
 imutils==0.4.3
 Keras==2.0.8
